@@ -1,0 +1,349 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "IBKR Market Data API",
+    "description": "A web service that connects to Interactive Brokers (IBKR) and provides historical market data through a REST API.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "IBKR Market Data API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "/marketdata": {
+      "post": {
+        "summary": "Get historical bar data for a symbol",
+        "description": "Returns historical bar data (OHLC) for a given stock symbol with customizable parameters",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarketDataRequest"
+              },
+              "examples": {
+                "simple": {
+                  "value": {
+                    "symbol": "AAPL",
+                    "duration": "2 D",
+                    "barSize": "5 mins"
+                  }
+                },
+                "full": {
+                  "value": {
+                    "symbol": "MSFT",
+                    "secType": "STK",
+                    "endDateTime": "20230630-16:00:00",
+                    "duration": "3 D",
+                    "barSize": "15 mins",
+                    "whatToShow": "TRADES",
+                    "useRTH": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Historical bar data retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BarData"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing required parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Symbol is required"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contract not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Contract not found"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Failed to connect to IBKR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/historicalticks": {
+      "post": {
+        "summary": "Get historical tick data for a symbol",
+        "description": "Returns historical tick-by-tick data for a given stock symbol with customizable parameters",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HistoricalTicksRequest"
+              },
+              "examples": {
+                "simple": {
+                  "value": {
+                    "symbol": "AAPL"
+                  }
+                },
+                "full": {
+                  "value": {
+                    "symbol": "AAPL",
+                    "secType": "STK",
+                    "startDate": "20230101-00:00:00",
+                    "endDate": "20230131-23:59:59",
+                    "numberOfTicks": 500,
+                    "useRTH": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Historical tick data retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TickData"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing required parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Symbol is required"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contract not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Contract not found"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Failed to connect to IBKR"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "MarketDataRequest": {
+        "type": "object",
+        "required": ["symbol"],
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "description": "Stock symbol (e.g., AAPL, MSFT)",
+            "example": "AAPL"
+          },
+          "secType": {
+            "type": "string",
+            "description": "Security type",
+            "default": "STK",
+            "example": "STK"
+          },
+          "endDateTime": {
+            "type": "string",
+            "description": "End date and time in format 'yyyymmdd-hh:mm:ss'",
+            "example": "20230630-16:00:00"
+          },
+          "duration": {
+            "type": "string",
+            "description": "Duration string (e.g., '1 D', '5 D', '1 M')",
+            "default": "1 D",
+            "example": "2 D"
+          },
+          "barSize": {
+            "type": "string",
+            "description": "Bar size setting (e.g., '1 min', '5 mins', '1 hour')",
+            "default": "1 min",
+            "example": "5 mins"
+          },
+          "whatToShow": {
+            "type": "string",
+            "description": "Type of data to retrieve (e.g., 'TRADES', 'MIDPOINT')",
+            "default": "TRADES",
+            "example": "TRADES"
+          },
+          "useRTH": {
+            "type": "boolean",
+            "description": "Use regular trading hours only",
+            "default": true,
+            "example": true
+          }
+        }
+      },
+      "HistoricalTicksRequest": {
+        "type": "object",
+        "required": ["symbol"],
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "description": "Stock symbol (e.g., AAPL, MSFT)",
+            "example": "AAPL"
+          },
+          "secType": {
+            "type": "string",
+            "description": "Security type",
+            "default": "STK",
+            "example": "STK"
+          },
+          "startDate": {
+            "type": "string",
+            "description": "Start date and time in format 'yyyymmdd-hh:mm:ss', defaults to 1 month ago",
+            "example": "20230101-00:00:00"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "End date and time in format 'yyyymmdd-hh:mm:ss'",
+            "example": "20230131-23:59:59"
+          },
+          "numberOfTicks": {
+            "type": "integer",
+            "description": "Maximum number of ticks to retrieve",
+            "default": 1000,
+            "example": 500
+          },
+          "useRTH": {
+            "type": "boolean",
+            "description": "Use regular trading hours only",
+            "default": true,
+            "example": true
+          }
+        }
+      },
+      "BarData": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Date and time of the bar",
+            "example": "2023-06-30T16:00:00.000Z"
+          },
+          "open": {
+            "type": "number",
+            "description": "Opening price",
+            "example": 185.34
+          },
+          "high": {
+            "type": "number",
+            "description": "Highest price during the bar",
+            "example": 186.12
+          },
+          "low": {
+            "type": "number",
+            "description": "Lowest price during the bar",
+            "example": 185.21
+          },
+          "close": {
+            "type": "number",
+            "description": "Closing price",
+            "example": 185.92
+          },
+          "volume": {
+            "type": "integer",
+            "description": "Trading volume",
+            "example": 12500
+          }
+        }
+      },
+      "TickData": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "string",
+            "description": "Time of the tick",
+            "example": "2023-01-15T14:30:45.000Z"
+          },
+          "price": {
+            "type": "number",
+            "description": "Price of the tick",
+            "example": 185.75
+          },
+          "size": {
+            "type": "integer",
+            "description": "Size of the tick",
+            "example": 100
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        }
+      }
+    }
+  }
+}
