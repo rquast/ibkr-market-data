@@ -65,23 +65,53 @@ npm start
 ## API Endpoints
 
 ### Market Data
-- `GET /marketdata/:symbol` - Get historical bar data for a symbol (e.g., `/marketdata/AAPL`)
-- `GET /historicalticks/:symbol` - Get historical tick data for a symbol for the past month (e.g., `/historicalticks/AAPL`)
+- `POST /marketdata` - Get historical bar data for a symbol
+- `POST /historicalticks` - Get historical tick data for a symbol
 
-## Query Parameters
+## Request Body Parameters
 
+### /marketdata
 - `symbol` (required): Stock symbol (e.g., AAPL, MSFT)
-- `duration` (optional): Duration string (e.g., "1 D", "5 D", "1 M")
-- `barSize` (optional): Bar size setting (e.g., "1 min", "5 mins", "1 hour")
+- `secType` (optional): Security type, defaults to 'STK'
+- `endDateTime` (optional): End date and time in format 'yyyymmdd-hh:mm:ss', defaults to current time
+- `duration` (optional): Duration string (e.g., "1 D", "5 D", "1 M"), defaults to "1 D"
+- `barSize` (optional): Bar size setting (e.g., "1 min", "5 mins", "1 hour"), defaults to "1 min"
+- `whatToShow` (optional): Type of data to retrieve (e.g., "TRADES", "MIDPOINT"), defaults to "TRADES"
+- `useRTH` (optional): Use regular trading hours only, defaults to true
+
+### /historicalticks
+- `symbol` (required): Stock symbol (e.g., AAPL, MSFT)
+- `secType` (optional): Security type, defaults to 'STK'
+- `startDate` (optional): Start date and time in format 'yyyymmdd-hh:mm:ss', defaults to 1 month ago
+- `endDate` (optional): End date and time in format 'yyyymmdd-hh:mm:ss', defaults to current time
+- `numberOfTicks` (optional): Maximum number of ticks to retrieve, defaults to 1000
+- `useRTH` (optional): Use regular trading hours only, defaults to true
 
 ## Example Usage
 
 ```bash
 # Get historical bar data for Apple
-curl http://localhost:3000/marketdata/AAPL
+curl -X POST http://localhost:3000/marketdata \
+  -H "Content-Type: application/json" \
+  -d '{"symbol": "AAPL", "duration": "2 D", "barSize": "5 mins"}'
 
-# Get historical tick data for Apple (past month)
-curl http://localhost:3000/historicalticks/AAPL
+# Get historical tick data for Apple with custom parameters
+curl -X POST http://localhost:3000/historicalticks \
+  -H "Content-Type: application/json" \
+  -d '{"symbol": "AAPL", "startDate": "20230101-00:00:00", "endDate": "20230131-23:59:59", "numberOfTicks": 500}'
+
+# Get historical bar data for Microsoft with all parameters specified
+curl -X POST http://localhost:3000/marketdata \
+  -H "Content-Type: application/json" \
+  -d '{
+    "symbol": "MSFT",
+    "secType": "STK",
+    "endDateTime": "20230630-16:00:00",
+    "duration": "3 D",
+    "barSize": "15 mins",
+    "whatToShow": "TRADES",
+    "useRTH": true
+  }'
 ```
 
 ## Server Implementation (src/server.ts)
@@ -90,8 +120,8 @@ The `src/server.ts` file implements an Express server that:
 
 1. Creates an Express application listening on port 3000
 2. Provides two main endpoints:
-  - `/marketdata/:symbol`: Returns historical bar data (OHLC) for a given stock symbol with 1-day duration and 1-minute bars
-  - `/historicalticks/:symbol`: Returns historical tick-by-tick data for a given stock symbol for the past month (up to 1000 ticks)
+  - `POST /marketdata`: Returns historical bar data (OHLC) for a given stock symbol with customizable parameters
+  - `POST /historicalticks`: Returns historical tick-by-tick data for a given stock symbol with customizable parameters
 3. Connects to Interactive Brokers using the @stoqey/ibkr library
 4. Formats dates in the required UTC format for IBKR API calls
 5. Handles errors and returns appropriate HTTP status codes

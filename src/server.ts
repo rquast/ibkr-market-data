@@ -5,6 +5,9 @@ import ibkr from '@stoqey/ibkr';
 const app = express();
 const port = 3000;
 
+// Add middleware to parse JSON bodies
+app.use(express.json());
+
 // Helper function to format date in UTC format: yyyymmdd-hh:mm:ss
 const formatUTCDate = (date: Date = new Date()) => {
   const year = date.getUTCFullYear();
@@ -17,8 +20,20 @@ const formatUTCDate = (date: Date = new Date()) => {
   return `${year}${month}${day}-${hours}:${minutes}:${seconds}`;
 };
 
-app.get('/marketdata/:symbol', async (req, res) => {
-  const symbol = req.params.symbol;
+app.post('/marketdata', async (req, res) => {
+  const { 
+    symbol, 
+    secType = 'STK',
+    endDateTime = formatUTCDate(),
+    duration = '1 D',
+    barSize = '1 min',
+    whatToShow = 'TRADES',
+    useRTH = true
+  } = req.body;
+
+  if (!symbol) {
+    return res.status(400).json({ error: 'Symbol is required' });
+  }
 
   try {
     // Ensure IBKR connection is initialized
@@ -31,18 +46,12 @@ app.get('/marketdata/:symbol', async (req, res) => {
     console.log('READ SYMBOL DATA', symbol);
     const contractDetails = await mkdManager.getContract({
       symbol,
-      secType: 'STK',
+      secType,
     });
 
     if (!contractDetails) {
       return res.status(404).json({ error: 'Contract not found' });
     }
-
-    const endDateTime = formatUTCDate();
-    const duration = '1 D';
-    const barSize = '1 min';
-    const whatToShow = 'TRADES';
-    const useRTH = true;
 
     const marketData = await mkdManager.getHistoricalData(
       contractDetails,
@@ -59,8 +68,19 @@ app.get('/marketdata/:symbol', async (req, res) => {
   }
 });
 
-app.get('/historicalticks/:symbol', async (req, res) => {
-  const symbol = req.params.symbol;
+app.post('/historicalticks', async (req, res) => {
+  const { 
+    symbol, 
+    secType = 'STK',
+    startDate,
+    endDate = formatUTCDate(),
+    numberOfTicks = 1000,
+    useRTH = true
+  } = req.body;
+
+  if (!symbol) {
+    return res.status(400).json({ error: 'Symbol is required' });
+  }
 
   try {
     // Ensure IBKR connection is initialized
@@ -73,30 +93,24 @@ app.get('/historicalticks/:symbol', async (req, res) => {
     console.log('READ HISTORICAL TICKS FOR', symbol);
     const contractDetails = await mkdManager.getContract({
       symbol,
-      secType: 'STK',
+      secType,
     });
 
     if (!contractDetails) {
       return res.status(404).json({ error: 'Contract not found' });
     }
 
-    // Calculate start date (1 month ago)
-    const startDateObj = new Date();
-    startDateObj.setMonth(startDateObj.getMonth() - 1);
-    const startDate = formatUTCDate(startDateObj);
-    
-    // Current date as end date
-    const endDate = formatUTCDate();
-    
-    // Number of ticks to retrieve
-    const numberOfTicks = 1000; // Adjust as needed
-    
-    // Use regular trading hours
-    const useRTH = true;
+    // Calculate start date (1 month ago) if not provided
+    let formattedStartDate = startDate;
+    if (!startDate) {
+      const startDateObj = new Date();
+      startDateObj.setMonth(startDateObj.getMonth() - 1);
+      formattedStartDate = formatUTCDate(startDateObj);
+    }
 
     const ticksData = await mkdManager.getHistoricalTicksLast(
       contractDetails,
-      startDate,
+      formattedStartDate,
       endDate,
       numberOfTicks,
       useRTH
