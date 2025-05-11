@@ -8,6 +8,20 @@ const port = 3000;
 // Add middleware to parse JSON bodies
 app.use(express.json());
 
+// Add CORS middleware to allow requests from any origin
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
+
 // Helper function to format date in UTC format: yyyymmdd-hh:mm:ss
 const formatUTCDate = (date: Date = new Date()) => {
   const year = date.getUTCFullYear();
