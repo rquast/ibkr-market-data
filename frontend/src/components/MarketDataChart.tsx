@@ -2,13 +2,17 @@ import { useState } from 'react'
 import Highcharts from 'highcharts/highstock'
 import HighchartsReact from 'highcharts-react-official'
 
+// Import indicators
+import './indicators-all'
+
 interface BarData {
-  time: string
+  date: string
   open: number
   high: number
   low: number
   close: number
   volume: number
+  instrument?: any
 }
 
 interface MarketDataRequest {
@@ -72,7 +76,8 @@ const MarketDataChart: React.FC = () => {
       }
 
       const result = await response.json()
-      setData(result)
+      // Extract data array from response
+      setData(Array.isArray(result) ? result : result.data || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
@@ -80,59 +85,76 @@ const MarketDataChart: React.FC = () => {
     }
   }
 
+  // Prepare data for Highcharts
+  const ohlcData = data.filter(item => 
+    item && item.date && item.open != null && item.high != null && item.low != null && item.close != null
+  ).map(item => [
+    new Date(item.date).getTime(),
+    item.open,
+    item.high,
+    item.low,
+    item.close
+  ])
+
+  const volumeData = data.filter(item => 
+    item && item.date && item.volume != null
+  ).map(item => [
+    new Date(item.date).getTime(),
+    item.volume
+  ])
+
   const chartOptions: Highcharts.Options = {
-    rangeSelector: {
-      selected: 1
+    chart: {
+      height: 600
     },
     title: {
-      text: `${formData.symbol} Stock Price`
+      text: `${formData.symbol} Historical`
+    },
+    subtitle: {
+      text: 'All indicators'
+    },
+    accessibility: {
+      series: {
+        descriptionFormat: '{seriesDescription}.'
+      },
+      description: 'Use the dropdown menus above to display different indicator series on the chart.',
+      screenReaderSection: {
+        beforeChartFormat: '<{headingTagName}>{chartTitle}</{headingTagName}><div>{typeDescription}</div><div>{chartSubtitle}</div><div>{chartLongdesc}</div>'
+      }
+    },
+    legend: {
+      enabled: true
+    },
+    rangeSelector: {
+      selected: 2
     },
     yAxis: [{
-      labels: {
-        align: 'right',
-        x: -3
-      },
-      title: {
-        text: 'OHLC'
-      },
-      height: '60%',
-      lineWidth: 2,
-      resize: {
-        enabled: true
-      }
+      height: '60%'
     }, {
-      labels: {
-        align: 'right',
-        x: -3
-      },
-      title: {
-        text: 'Volume'
-      },
-      top: '65%',
-      height: '35%',
-      offset: 0,
-      lineWidth: 2
+      top: '60%',
+      height: '20%'
+    }, {
+      top: '80%',
+      height: '20%'
     }],
-    tooltip: {
-      split: true
+    plotOptions: {
+      series: {
+        showInLegend: true,
+        accessibility: {
+          exposeAsGroupOnly: true
+        }
+      }
     },
     series: [{
       type: 'candlestick',
+      id: formData.symbol.toLowerCase(),
       name: formData.symbol,
-      data: data.filter(item => item && item.time && item.open != null && item.high != null && item.low != null && item.close != null).map(item => [
-        new Date(item.time).getTime(),
-        item.open,
-        item.high,
-        item.low,
-        item.close
-      ])
+      data: ohlcData
     }, {
       type: 'column',
+      id: 'volume',
       name: 'Volume',
-      data: data.filter(item => item && item.time && item.volume != null).map(item => [
-        new Date(item.time).getTime(),
-        item.volume
-      ]),
+      data: volumeData,
       yAxis: 1
     }]
   }
@@ -252,10 +274,102 @@ const MarketDataChart: React.FC = () => {
 
       {data.length > 0 && (
         <div className="chart-section">
+          <div className="indicator-controls" style={{ marginBottom: '20px' }}>
+            <label htmlFor="overlays" style={{ marginRight: '10px' }}>
+              Overlay Indicators:
+              <select id="overlays" style={{ marginLeft: '5px' }}>
+                <option value="pc">Price Channel (PC)</option>
+                <option value="bb">Bollinger Bands (BB)</option>
+                <option value="ema">Exponential Moving Average (EMA)</option>
+                <option value="sma">Simple Moving Average (SMA)</option>
+                <option value="keltner">Keltner Channels</option>
+                <option value="psar">Parabolic SAR</option>
+                <option value="pivotpoints">Pivot Points</option>
+                <option value="vbp">Volume by Price</option>
+              </select>
+            </label>
+            <label htmlFor="oscillators" style={{ marginLeft: '20px' }}>
+              Oscillator Indicators:
+              <select id="oscillators" style={{ marginLeft: '5px' }}>
+                <option value="macd">MACD</option>
+                <option value="rsi">RSI</option>
+                <option value="stochastic">Stochastic</option>
+                <option value="cci">CCI</option>
+                <option value="ao">Awesome Oscillator</option>
+                <option value="aroon">Aroon</option>
+                <option value="atr">ATR</option>
+                <option value="momentum">Momentum</option>
+                <option value="obv">On Balance Volume</option>
+                <option value="williams">Williams %R</option>
+              </select>
+            </label>
+          </div>
           <HighchartsReact
             highcharts={Highcharts}
             constructorType={'stockChart'}
             options={chartOptions}
+            callback={(chart: Highcharts.Chart) => {
+              // Add initial technical indicators
+              try {
+                chart.addSeries({
+                  type: 'pc' as any,
+                  id: 'overlay',
+                  linkedTo: formData.symbol.toLowerCase(),
+                  yAxis: 0
+                })
+                
+                chart.addSeries({
+                  type: 'macd' as any,
+                  id: 'oscillator', 
+                  linkedTo: formData.symbol.toLowerCase(),
+                  yAxis: 2
+                })
+              } catch (error) {
+                console.warn('Could not add technical indicators:', error)
+              }
+
+              // Add event listeners for indicator dropdowns
+              const overlaysSelect = document.getElementById('overlays') as HTMLSelectElement
+              const oscillatorsSelect = document.getElementById('oscillators') as HTMLSelectElement
+              
+              if (overlaysSelect) {
+                overlaysSelect.addEventListener('change', function (e) {
+                  const series = chart.get('overlay')
+                  if (series) {
+                    series.remove(false)
+                  }
+                  try {
+                    chart.addSeries({
+                      type: (e.target as HTMLSelectElement).value as any,
+                      linkedTo: formData.symbol.toLowerCase(),
+                      id: 'overlay',
+                      yAxis: 0
+                    })
+                  } catch (error) {
+                    console.warn('Could not add overlay indicator:', error)
+                  }
+                })
+              }
+
+              if (oscillatorsSelect) {
+                oscillatorsSelect.addEventListener('change', function (e) {
+                  const series = chart.get('oscillator')
+                  if (series) {
+                    series.remove(false)
+                  }
+                  try {
+                    chart.addSeries({
+                      type: (e.target as HTMLSelectElement).value as any,
+                      linkedTo: formData.symbol.toLowerCase(),
+                      id: 'oscillator',
+                      yAxis: 2
+                    })
+                  } catch (error) {
+                    console.warn('Could not add oscillator indicator:', error)
+                  }
+                })
+              }
+            }}
           />
         </div>
       )}
