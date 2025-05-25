@@ -19,7 +19,7 @@ export class HistoricalTicksRequestDto {
   secType?: string;
 
   @ApiPropertyOptional({
-    description: "Start date and time in format 'yyyymmdd-hh:mm:ss', defaults to 1 month ago",
+    description: "Start date and time in format 'yyyymmdd-hh:mm:ss', defaults to 3 months ago",
     example: '20230101-00:00:00',
   })
   @IsOptional()

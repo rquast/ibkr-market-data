@@ -18,10 +18,10 @@ interface HistoricalTicksRequest {
 }
 
 const HistoricalTicksChart: React.FC = () => {
-  // Get current date and time, and yesterday for defaults
+  // Get current date and time, and 3 months ago for defaults
   const now = new Date()
-  const yesterday = new Date(now)
-  yesterday.setDate(yesterday.getDate() - 1)
+  const threeMonthsAgo = new Date(now)
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
   
   const formatDateTime = (date: Date) => {
     return date.getFullYear().toString() + 
@@ -35,7 +35,7 @@ const HistoricalTicksChart: React.FC = () => {
   const [formData, setFormData] = useState<HistoricalTicksRequest>({
     symbol: 'AAPL',
     secType: 'STK',
-    startDate: formatDateTime(yesterday),
+    startDate: formatDateTime(threeMonthsAgo),
     endDate: formatDateTime(now),
     numberOfTicks: 1000,
     useRTH: true

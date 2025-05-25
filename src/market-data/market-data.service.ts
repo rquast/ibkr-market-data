@@ -84,11 +84,11 @@ export class MarketDataService {
       throw new Error('Contract not found');
     }
 
-    // Calculate start date (1 month ago) if not provided
+    // Calculate start date (3 months ago) if not provided
     let formattedStartDate = startDate;
     if (!startDate) {
       const startDateObj = new Date();
-      startDateObj.setMonth(startDateObj.getMonth() - 1);
+      startDateObj.setMonth(startDateObj.getMonth() - 3);
       formattedStartDate = this.formatUTCDate(startDateObj);
     }
 
