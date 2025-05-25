@@ -1,9 +1,22 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Highcharts from 'highcharts/highstock'
 import HighchartsReact from 'highcharts-react-official'
 
-// Import indicators
-import './indicators-all'
+// Import Highcharts modules
+import IndicatorsAll from 'highcharts/indicators/indicators-all'
+import StockTools from 'highcharts/modules/stock-tools'
+import AnnotationsAdvanced from 'highcharts/modules/annotations-advanced'
+import PriceIndicator from 'highcharts/modules/price-indicator'
+import FullScreen from 'highcharts/modules/full-screen'
+import DragPanes from 'highcharts/modules/drag-panes'
+
+// Initialize modules
+IndicatorsAll(Highcharts)
+StockTools(Highcharts)
+AnnotationsAdvanced(Highcharts)
+PriceIndicator(Highcharts)
+FullScreen(Highcharts)
+DragPanes(Highcharts)
 
 interface BarData {
   date: string
@@ -47,6 +60,9 @@ const MarketDataChart: React.FC = () => {
   const [data, setData] = useState<BarData[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const chartRef = useRef<Highcharts.Chart | null>(null)
+  const [selectedOverlay, setSelectedOverlay] = useState('pc')
+  const [selectedOscillator, setSelectedOscillator] = useState('macd')
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -54,6 +70,52 @@ const MarketDataChart: React.FC = () => {
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }))
+  }
+
+  const handleOverlayChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value
+    setSelectedOverlay(value)
+    
+    if (chartRef.current) {
+      const series = chartRef.current.get('overlay')
+      if (series) {
+        series.remove(false)
+      }
+      try {
+        chartRef.current.addSeries({
+          type: value as any,
+          linkedTo: formData.symbol.toLowerCase(),
+          id: 'overlay',
+          yAxis: 0
+        })
+        chartRef.current.redraw()
+      } catch (error) {
+        console.warn('Could not add overlay indicator:', error)
+      }
+    }
+  }
+
+  const handleOscillatorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value
+    setSelectedOscillator(value)
+    
+    if (chartRef.current) {
+      const series = chartRef.current.get('oscillator')
+      if (series) {
+        series.remove(false)
+      }
+      try {
+        chartRef.current.addSeries({
+          type: value as any,
+          linkedTo: formData.symbol.toLowerCase(),
+          id: 'oscillator',
+          yAxis: 2
+        })
+        chartRef.current.redraw()
+      } catch (error) {
+        console.warn('Could not add oscillator indicator:', error)
+      }
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -277,7 +339,7 @@ const MarketDataChart: React.FC = () => {
           <div className="indicator-controls" style={{ marginBottom: '20px' }}>
             <label htmlFor="overlays" style={{ marginRight: '10px' }}>
               Overlay Indicators:
-              <select id="overlays" style={{ marginLeft: '5px' }}>
+              <select id="overlays" value={selectedOverlay} onChange={handleOverlayChange} style={{ marginLeft: '5px' }}>
                 <option value="pc">Price Channel (PC)</option>
                 <option value="bb">Bollinger Bands (BB)</option>
                 <option value="ema">Exponential Moving Average (EMA)</option>
@@ -290,7 +352,7 @@ const MarketDataChart: React.FC = () => {
             </label>
             <label htmlFor="oscillators" style={{ marginLeft: '20px' }}>
               Oscillator Indicators:
-              <select id="oscillators" style={{ marginLeft: '5px' }}>
+              <select id="oscillators" value={selectedOscillator} onChange={handleOscillatorChange} style={{ marginLeft: '5px' }}>
                 <option value="macd">MACD</option>
                 <option value="rsi">RSI</option>
                 <option value="stochastic">Stochastic</option>
@@ -308,66 +370,25 @@ const MarketDataChart: React.FC = () => {
             highcharts={Highcharts}
             constructorType={'stockChart'}
             options={chartOptions}
-            callback={(chart: Highcharts.Chart) => {
+            callback={(chartInstance: Highcharts.Chart) => {
+              chartRef.current = chartInstance
+              
               // Add initial technical indicators
               try {
-                chart.addSeries({
-                  type: 'pc' as any,
+                chartInstance.addSeries({
+                  type: selectedOverlay as any,
                   id: 'overlay',
                   linkedTo: formData.symbol.toLowerCase(),
-                  yAxis: 0
                 })
                 
-                chart.addSeries({
-                  type: 'macd' as any,
+                chartInstance.addSeries({
+                  type: selectedOscillator as any,
                   id: 'oscillator', 
                   linkedTo: formData.symbol.toLowerCase(),
                   yAxis: 2
                 })
               } catch (error) {
                 console.warn('Could not add technical indicators:', error)
-              }
-
-              // Add event listeners for indicator dropdowns
-              const overlaysSelect = document.getElementById('overlays') as HTMLSelectElement
-              const oscillatorsSelect = document.getElementById('oscillators') as HTMLSelectElement
-              
-              if (overlaysSelect) {
-                overlaysSelect.addEventListener('change', function (e) {
-                  const series = chart.get('overlay')
-                  if (series) {
-                    series.remove(false)
-                  }
-                  try {
-                    chart.addSeries({
-                      type: (e.target as HTMLSelectElement).value as any,
-                      linkedTo: formData.symbol.toLowerCase(),
-                      id: 'overlay',
-                      yAxis: 0
-                    })
-                  } catch (error) {
-                    console.warn('Could not add overlay indicator:', error)
-                  }
-                })
-              }
-
-              if (oscillatorsSelect) {
-                oscillatorsSelect.addEventListener('change', function (e) {
-                  const series = chart.get('oscillator')
-                  if (series) {
-                    series.remove(false)
-                  }
-                  try {
-                    chart.addSeries({
-                      type: (e.target as HTMLSelectElement).value as any,
-                      linkedTo: formData.symbol.toLowerCase(),
-                      id: 'oscillator',
-                      yAxis: 2
-                    })
-                  } catch (error) {
-                    console.warn('Could not add oscillator indicator:', error)
-                  }
-                })
               }
             }}
           />
