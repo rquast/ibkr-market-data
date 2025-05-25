@@ -1,27 +1,32 @@
-# Agent Guidelines for IBKR Market Data API
+# Agent Guidelines for IBKR Market Data API (NestJS)
 
 ## Commands
 - Build: `npm run build`
-- Development: `npm run dev` 
-- Production: `npm start`
-- TypeScript check: `npx tsc --noEmit`
-- No test framework configured yet
+- Development: `npm run start:dev`
+- Debug: `npm run start:debug`
+- Production: `npm run start:prod`
+- Test: `npm run test`
+- Test watch: `npm run test:watch`
+- Test coverage: `npm run test:cov`
+- TypeScript check: Built into NestJS build process
 
 ## Code Style
-- **Language**: TypeScript with strict mode enabled
-- **Imports**: Use ES6 imports (`import express from 'express'`)
-- **Naming**: camelCase for variables/functions, PascalCase for types/classes
-- **Types**: Explicit typing preferred, use `any` sparingly with comment
-- **Error handling**: Try/catch blocks with typed error casting `(error as Error).message`
-- **Async/await**: Preferred over promises
-- **Comments**: Minimal inline comments, prefer self-documenting code
-- **Destructuring**: Use object destructuring for request bodies with defaults
-- **API responses**: JSON format with consistent error structure `{ error: string }`
-- **Express middleware**: Custom CORS middleware, JSON body parsing
-- **Formatting**: 2-space indentation, semicolons required
+- **Framework**: NestJS with TypeScript decorators
+- **Imports**: Use ES6 imports with `@nestjs/*` decorators
+- **Naming**: camelCase for variables/functions, PascalCase for DTOs/classes
+- **DTOs**: Use class-validator decorators (`@IsString`, `@IsOptional`)
+- **API Documentation**: Use `@nestjs/swagger` decorators (`@ApiProperty`, `@ApiResponse`)
+- **Error handling**: NestJS HttpException with proper status codes
+- **Validation**: Global ValidationPipe with class-transformer
+- **Comments**: OpenAPI descriptions in decorators, minimal inline comments
+- **Structure**: Controllers, Services, DTOs in separate files
+- **Formatting**: NestJS CLI formatting standards
 
 ## Architecture
-- Single file Express server in `src/server.ts`
-- Uses @stoqey/ibkr for IBKR connectivity
-- POST endpoints for market data operations
-- UTC date formatting: `yyyymmdd-hh:mm:ss`
+- **Structure**: Modular NestJS with MarketDataModule
+- **Controller**: `src/market-data/market-data.controller.ts` with OpenAPI decorators
+- **Service**: `src/market-data/market-data.service.ts` for IBKR logic
+- **DTOs**: `src/dto/` for request/response validation
+- **Documentation**: Auto-generated at `/api` endpoint
+- **IBKR Integration**: Uses @stoqey/ibkr library in service layer
+- **Date formatting**: UTC format `yyyymmdd-hh:mm:ss` in service

@@ -15,16 +15,36 @@
     }
   ],
   "paths": {
+    "/api": {
+      "get": {
+        "summary": "API Documentation",
+        "description": "Swagger/OpenAPI documentation interface",
+        "responses": {
+          "200": {
+            "description": "API documentation page",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Documentation"]
+      }
+    },
     "/marketdata": {
       "post": {
         "summary": "Get historical bar data for a symbol",
         "description": "Returns historical bar data (OHLC) for a given stock symbol with customizable parameters",
+        "tags": ["Market Data"],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MarketDataRequest"
+                "$ref": "#/components/schemas/MarketDataRequestDto"
               },
               "examples": {
                 "simple": {
@@ -57,7 +77,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/BarData"
+                    "$ref": "#/components/schemas/BarDataDto"
                   }
                 }
               }
@@ -68,7 +88,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/ErrorDto"
                 },
                 "example": {
                   "error": "Symbol is required"
@@ -81,7 +101,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/ErrorDto"
                 },
                 "example": {
                   "error": "Contract not found"
@@ -94,7 +114,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/ErrorDto"
                 },
                 "example": {
                   "error": "Failed to connect to IBKR"
@@ -109,12 +129,13 @@
       "post": {
         "summary": "Get historical tick data for a symbol",
         "description": "Returns historical tick-by-tick data for a given stock symbol with customizable parameters",
+        "tags": ["Market Data"],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/HistoricalTicksRequest"
+                "$ref": "#/components/schemas/HistoricalTicksRequestDto"
               },
               "examples": {
                 "simple": {
@@ -144,7 +165,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/TickData"
+                    "$ref": "#/components/schemas/TickDataDto"
                   }
                 }
               }
@@ -155,7 +176,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/ErrorDto"
                 },
                 "example": {
                   "error": "Symbol is required"
@@ -168,7 +189,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/ErrorDto"
                 },
                 "example": {
                   "error": "Contract not found"
@@ -181,7 +202,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/ErrorDto"
                 },
                 "example": {
                   "error": "Failed to connect to IBKR"
@@ -195,7 +216,7 @@
   },
   "components": {
     "schemas": {
-      "MarketDataRequest": {
+      "MarketDataRequestDto": {
         "type": "object",
         "required": ["symbol"],
         "properties": {
@@ -241,7 +262,7 @@
           }
         }
       },
-      "HistoricalTicksRequest": {
+      "HistoricalTicksRequestDto": {
         "type": "object",
         "required": ["symbol"],
         "properties": {
@@ -280,8 +301,9 @@
           }
         }
       },
-      "BarData": {
+      "BarDataDto": {
         "type": "object",
+        "required": ["date", "open", "high", "low", "close", "volume"],
         "properties": {
           "date": {
             "type": "string",
@@ -315,8 +337,9 @@
           }
         }
       },
-      "TickData": {
+      "TickDataDto": {
         "type": "object",
+        "required": ["time", "price", "size"],
         "properties": {
           "time": {
             "type": "string",
@@ -335,12 +358,14 @@
           }
         }
       },
-      "Error": {
+      "ErrorDto": {
         "type": "object",
+        "required": ["error"],
         "properties": {
           "error": {
             "type": "string",
-            "description": "Error message"
+            "description": "Error message",
+            "example": "Symbol is required"
           }
         }
       }
