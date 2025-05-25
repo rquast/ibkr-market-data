@@ -1,8 +1,10 @@
 # Agent Guidelines for IBKR Market Data API (NestJS)
 
 ## Commands
-- Build: `npm run build`
-- Development: `npm run start:dev`
+- Build all: `npm run build` (builds frontend + backend)
+- Build frontend only: `npm run build:frontend`
+- Development backend: `npm run start:dev`
+- Development frontend: `npm run dev:frontend`
 - Debug: `npm run start:debug`
 - Production: `npm run start:prod`
 - Test: `npm run test`
@@ -30,3 +32,6 @@
 - **Documentation**: Auto-generated at `/api` endpoint
 - **IBKR Integration**: Uses @stoqey/ibkr library in service layer
 - **Date formatting**: UTC format `yyyymmdd-hh:mm:ss` in service
+- **Frontend**: React+TypeScript+Vite in `frontend/` directory
+- **Charts**: Highcharts for market data visualization
+- **Static serving**: NestJS serves built frontend from `/` route
