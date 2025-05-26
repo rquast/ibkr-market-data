@@ -57,12 +57,12 @@ const MarketDataChart: React.FC = () => {
     whatToShow: 'TRADES',
     useRTH: true
   })
+  const [symbol, setSymbol] = useState('aapl')
   const [data, setData] = useState<BarData[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const chartRef = useRef<Highcharts.Chart | null>(null)
-  const [selectedOverlay, setSelectedOverlay] = useState('pc')
-  const [selectedOscillator, setSelectedOscillator] = useState('macd')
+  const [selectedOverlay, setSelectedOverlay] = useState('bb')
+  const [selectedOscillator, setSelectedOscillator] = useState('ao')
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -70,52 +70,21 @@ const MarketDataChart: React.FC = () => {
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }))
+    
+    // Update symbol state when symbol input changes
+    if (name === 'symbol') {
+      setSymbol(value.toLowerCase())
+    }
   }
 
   const handleOverlayChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value
     setSelectedOverlay(value)
-    
-    if (chartRef.current) {
-      const series = chartRef.current.get('overlay')
-      if (series) {
-        series.remove(false)
-      }
-      try {
-        chartRef.current.addSeries({
-          type: value as any,
-          linkedTo: formData.symbol.toLowerCase(),
-          id: 'overlay',
-          yAxis: 0
-        })
-        chartRef.current.redraw()
-      } catch (error) {
-        console.warn('Could not add overlay indicator:', error)
-      }
-    }
   }
 
   const handleOscillatorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value
     setSelectedOscillator(value)
-    
-    if (chartRef.current) {
-      const series = chartRef.current.get('oscillator')
-      if (series) {
-        series.remove(false)
-      }
-      try {
-        chartRef.current.addSeries({
-          type: value as any,
-          linkedTo: formData.symbol.toLowerCase(),
-          id: 'oscillator',
-          yAxis: 2
-        })
-        chartRef.current.redraw()
-      } catch (error) {
-        console.warn('Could not add oscillator indicator:', error)
-      }
-    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -165,51 +134,11 @@ const MarketDataChart: React.FC = () => {
     item.volume
   ])
 
-  const chartOptions: Highcharts.Options = {
-    chart: {
-      height: 600
-    },
-    title: {
-      text: `${formData.symbol} Historical`
-    },
-    subtitle: {
-      text: 'All indicators'
-    },
-    accessibility: {
-      series: {
-        descriptionFormat: '{seriesDescription}.'
-      },
-      description: 'Use the dropdown menus above to display different indicator series on the chart.',
-      screenReaderSection: {
-        beforeChartFormat: '<{headingTagName}>{chartTitle}</{headingTagName}><div>{typeDescription}</div><div>{chartSubtitle}</div><div>{chartLongdesc}</div>'
-      }
-    },
-    legend: {
-      enabled: true
-    },
-    rangeSelector: {
-      selected: 2
-    },
-    yAxis: [{
-      height: '60%'
-    }, {
-      top: '60%',
-      height: '20%'
-    }, {
-      top: '80%',
-      height: '20%'
-    }],
-    plotOptions: {
-      series: {
-        showInLegend: true,
-        accessibility: {
-          exposeAsGroupOnly: true
-        }
-      }
-    },
-    series: [{
+  // Create a function to generate chart options
+  const getChartOptions = (): Highcharts.Options => {
+    const baseSeries: any[] = [{
       type: 'candlestick',
-      id: formData.symbol.toLowerCase(),
+      id: symbol,
       name: formData.symbol,
       data: ohlcData
     }, {
@@ -219,7 +148,74 @@ const MarketDataChart: React.FC = () => {
       data: volumeData,
       yAxis: 1
     }]
+
+    // Add overlay indicator
+    if (selectedOverlay && ohlcData.length > 0) {
+      baseSeries.push({
+        type: selectedOverlay,
+        linkedTo: symbol,
+        id: 'overlay'
+      })
+    }
+
+    // Add oscillator indicator
+    if (selectedOscillator && ohlcData.length > 0) {
+      baseSeries.push({
+        type: selectedOscillator,
+        linkedTo: symbol,
+        id: 'oscillator',
+        yAxis: 2
+      })
+    }
+
+    return {
+      chart: {
+        height: 600
+      },
+      title: {
+        text: `${formData.symbol} Historical`
+      },
+      subtitle: {
+        text: 'All indicators'
+      },
+      accessibility: {
+        series: {
+          descriptionFormat: '{seriesDescription}.'
+        },
+        description: 'Use the dropdown menus above to display different indicator series on the chart.',
+        screenReaderSection: {
+          beforeChartFormat: '<{headingTagName}>{chartTitle}</{headingTagName}><div>{typeDescription}</div><div>{chartSubtitle}</div><div>{chartLongdesc}</div>'
+        }
+      },
+      legend: {
+        enabled: true
+      },
+      rangeSelector: {
+        selected: 2
+      },
+      yAxis: [{
+        height: '60%'
+      }, {
+        top: '60%',
+        height: '20%'
+      }, {
+        top: '80%',
+        height: '20%'
+      }],
+      plotOptions: {
+        series: {
+          showInLegend: true,
+          accessibility: {
+            exposeAsGroupOnly: true
+          }
+        }
+      },
+      series: baseSeries
+    }
   }
+
+  // Use the dynamic options
+  const chartOptions = getChartOptions()
 
   return (
     <div>
@@ -340,8 +336,8 @@ const MarketDataChart: React.FC = () => {
             <label htmlFor="overlays" style={{ marginRight: '10px' }}>
               Overlay Indicators:
               <select id="overlays" value={selectedOverlay} onChange={handleOverlayChange} style={{ marginLeft: '5px' }}>
-                <option value="pc">Price Channel (PC)</option>
                 <option value="bb">Bollinger Bands (BB)</option>
+                <option value="pc">Price Channel (PC)</option>
                 <option value="ema">Exponential Moving Average (EMA)</option>
                 <option value="sma">Simple Moving Average (SMA)</option>
                 <option value="keltner">Keltner Channels</option>
@@ -367,30 +363,10 @@ const MarketDataChart: React.FC = () => {
             </label>
           </div>
           <HighchartsReact
+            key={`${selectedOverlay}-${selectedOscillator}-${symbol}`}
             highcharts={Highcharts}
             constructorType={'stockChart'}
             options={chartOptions}
-            callback={(chartInstance: Highcharts.Chart) => {
-              chartRef.current = chartInstance
-              
-              // Add initial technical indicators
-              try {
-                chartInstance.addSeries({
-                  type: selectedOverlay as any,
-                  id: 'overlay',
-                  linkedTo: formData.symbol.toLowerCase(),
-                })
-                
-                chartInstance.addSeries({
-                  type: selectedOscillator as any,
-                  id: 'oscillator', 
-                  linkedTo: formData.symbol.toLowerCase(),
-                  yAxis: 2
-                })
-              } catch (error) {
-                console.warn('Could not add technical indicators:', error)
-              }
-            }}
           />
         </div>
       )}
