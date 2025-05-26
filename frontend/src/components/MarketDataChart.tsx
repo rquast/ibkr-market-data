@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import Highcharts from 'highcharts/highstock'
 import HighchartsReact from 'highcharts-react-official'
 
@@ -9,6 +9,10 @@ import AnnotationsAdvanced from 'highcharts/modules/annotations-advanced'
 import PriceIndicator from 'highcharts/modules/price-indicator'
 import FullScreen from 'highcharts/modules/full-screen'
 import DragPanes from 'highcharts/modules/drag-panes'
+
+// Import CSS for stock tools
+import 'highcharts/css/stocktools/gui.css'
+import 'highcharts/css/annotations/popup.css'
 
 // Initialize modules
 IndicatorsAll(Highcharts)
@@ -171,6 +175,15 @@ const MarketDataChart: React.FC = () => {
     return {
       chart: {
         height: 600
+      },
+      navigation: {
+        bindingsClassName: 'tools-container'
+      },
+      stockTools: {
+        gui: {
+          enabled: true,
+          buttons: ['indicators', 'separator', 'simpleShapes', 'lines', 'crookedLines', 'measure', 'advanced', 'toggleAnnotations', 'separator', 'verticalLabels', 'flags', 'separator', 'zoomChange', 'fullScreen', 'separator', 'currentPriceIndicator']
+        }
       },
       title: {
         text: `${formData.symbol} Historical`
