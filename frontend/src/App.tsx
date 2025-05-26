@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import MarketDataChart from './components/MarketDataChart'
 import HistoricalTicksChart from './components/HistoricalTicksChart'
+import RelativeRotationGraph from './components/RelativeRotationGraph'
 
 function App() {
   const [activeTab, setActiveTab] = useState('marketdata')
@@ -25,10 +26,17 @@ function App() {
         >
           Historical Tick Data
         </button>
+        <button
+          className={`tab ${activeTab === 'rrg' ? 'active' : ''}`}
+          onClick={() => setActiveTab('rrg')}
+        >
+          Relative Rotation Graph
+        </button>
       </div>
 
       {activeTab === 'marketdata' && <MarketDataChart />}
       {activeTab === 'historicalticks' && <HistoricalTicksChart />}
+      {activeTab === 'rrg' && <RelativeRotationGraph />}
     </div>
   )
 }

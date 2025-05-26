@@ -3,11 +3,11 @@ import { MarketDataManager } from '@stoqey/ibkr';
 import ibkr from '@stoqey/ibkr';
 import { MarketDataRequestDto } from '../dto/market-data-request.dto';
 import { HistoricalTicksRequestDto } from '../dto/historical-ticks-request.dto';
-import { CacheService } from './cache.service';
+import { QuestDBService } from './questdb.service';
 
 @Injectable()
 export class MarketDataService {
-  constructor(private readonly cacheService: CacheService) {}
+  constructor(private readonly questDBService: QuestDBService) {}
   private formatUTCDate(date: Date = new Date()): string {
     const year = date.getUTCFullYear();
     const month = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -41,12 +41,6 @@ export class MarketDataService {
       useRTH
     };
 
-    // Check cache first
-    const cachedData = await this.cacheService.get(normalizedRequest);
-    if (cachedData) {
-      return cachedData;
-    }
-
     // Ensure IBKR connection is initialized
     await ibkr();
 
@@ -73,8 +67,8 @@ export class MarketDataService {
       useRTH
     );
 
-    // Cache the response
-    await this.cacheService.set(normalizedRequest, marketData);
+    // Store in QuestDB
+    await this.questDBService.storeMarketData(symbol, normalizedRequest, marketData);
 
     return marketData;
   }
@@ -107,12 +101,6 @@ export class MarketDataService {
       useRTH
     };
 
-    // Check cache first
-    const cachedData = await this.cacheService.get(normalizedRequest);
-    if (cachedData) {
-      return cachedData;
-    }
-
     // Ensure IBKR connection is initialized
     await ibkr();
 
@@ -138,8 +126,8 @@ export class MarketDataService {
       useRTH
     );
 
-    // Cache the response
-    await this.cacheService.set(normalizedRequest, ticksData);
+    // Store in QuestDB
+    await this.questDBService.storeTickData(symbol, normalizedRequest, ticksData);
 
     return ticksData;
   }

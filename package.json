@@ -31,6 +31,7 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/serve-static": "^5.0.3",
     "@nestjs/swagger": "^7.0.0",
+    "@questdb/nodejs-client": "^3.0.0",
     "@stoqey/ibkr": "^2.2.9",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
