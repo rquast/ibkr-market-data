@@ -160,7 +160,7 @@ export class QuestDBService implements OnModuleInit, OnModuleDestroy {
           .intColumn('count', record.count)
           .floatColumn('wap', record.wap)
           .booleanColumn('has_gaps', record.has_gaps)
-          .timestampColumn('timestamp', record.timestamp.getTime())
+          .timestampColumn('timestamp', record.timestamp.getTime() * 1000)
           .atNow();
       }
 
@@ -187,7 +187,7 @@ export class QuestDBService implements OnModuleInit, OnModuleDestroy {
     try {
       for (const tick of tickData) {
         const record: TickDataRecord = {
-          timestamp: new Date(),
+          timestamp: new Date(tick.time),
           symbol: symbol.toUpperCase(),
           exchange: request.exchange || 'SMART',
           sec_type: request.secType || 'STK',
@@ -203,12 +203,12 @@ export class QuestDBService implements OnModuleInit, OnModuleDestroy {
           .symbol('symbol', record.symbol)
           .symbol('exchange', record.exchange)
           .symbol('sec_type', record.sec_type)
-          .timestampColumn('tick_timestamp', record.tick_timestamp.getTime())
+          .timestampColumn('tick_timestamp', record.tick_timestamp.getTime() * 1000)
           .floatColumn('price', record.price)
           .intColumn('size', record.size)
           .symbol('exchange_code', record.exchange_code || '')
           .stringColumn('special_conditions', record.special_conditions || '')
-          .timestampColumn('timestamp', record.timestamp.getTime())
+          .timestampColumn('timestamp', record.timestamp.getTime() * 1000)
           .atNow();
       }
 
