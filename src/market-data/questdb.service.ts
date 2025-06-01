@@ -8,7 +8,6 @@ export interface MarketDataRecord {
   bar_size: string;
   sec_type: string;
   what_to_show: string;
-  duration: string;
   use_rth: boolean;
   open?: number;
   high?: number;
@@ -39,7 +38,6 @@ export class QuestDBService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     await this.connect();
-    await this.initializeTables();
   }
 
   async onModuleDestroy() {
@@ -67,52 +65,6 @@ export class QuestDBService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async initializeTables(): Promise<void> {
-    try {
-      // Create sample market_data record to initialize table structure
-      // All symbols must be added first, then all other columns
-      await this.sender
-        .table('market_data')
-        .symbol('symbol', 'INIT')
-        .symbol('exchange', 'SMART') 
-        .symbol('bar_size', '1 min')
-        .symbol('sec_type', 'STK')
-        .symbol('what_to_show', 'TRADES')
-        .symbol('duration', '1 D')
-        .booleanColumn('use_rth', true)
-        .floatColumn('open', 0.0)
-        .floatColumn('high', 0.0)
-        .floatColumn('low', 0.0)
-        .floatColumn('close', 0.0)
-        .intColumn('volume', 0)
-        .intColumn('count', 0)
-        .floatColumn('wap', 0.0)
-        .booleanColumn('has_gaps', false)
-        .timestampColumn('timestamp', Date.now())
-        .atNow();
-
-      // Create sample tick_data record to initialize table structure
-      // All symbols must be added first, then all other columns
-      await this.sender
-        .table('tick_data')
-        .symbol('symbol', 'INIT')
-        .symbol('exchange', 'SMART')
-        .symbol('sec_type', 'STK')
-        .symbol('exchange_code', '')
-        .timestampColumn('tick_timestamp', Date.now())
-        .floatColumn('price', 0.0)
-        .intColumn('size', 0)
-        .stringColumn('special_conditions', '')
-        .timestampColumn('timestamp', Date.now())
-        .atNow();
-
-      await this.sender.flush();
-      console.log('QuestDB tables initialized');
-    } catch (error) {
-      console.error('Error initializing QuestDB tables:', error);
-    }
-  }
-
   async storeMarketData(
     symbol: string,
     request: any,
@@ -131,7 +83,6 @@ export class QuestDBService implements OnModuleInit, OnModuleDestroy {
           bar_size: request.barSize || '1 min',
           sec_type: request.secType || 'STK',
           what_to_show: request.whatToShow || 'TRADES',
-          duration: request.duration || '1 D',
           use_rth: request.useRTH ?? true,
           open: bar.open ?? 0,
           high: bar.high ?? 0,
@@ -150,7 +101,6 @@ export class QuestDBService implements OnModuleInit, OnModuleDestroy {
           .symbol('bar_size', record.bar_size)
           .symbol('sec_type', record.sec_type)
           .symbol('what_to_show', record.what_to_show)
-          .symbol('duration', record.duration)
           .booleanColumn('use_rth', record.use_rth)
           .floatColumn('open', record.open)
           .floatColumn('high', record.high)
